@@ -13,6 +13,7 @@ from scipy.cluster.hierarchy import linkage, dendrogram
 from sklearn.decomposition import PCA
 from sklearn.manifold import MDS
 from sklearn.cluster import KMeans
+from collections import defaultdict
 
 # ================================
 # Funzioni principali
@@ -197,42 +198,48 @@ def should_exclude(name, is_folder=False):
 
 def calculate_hashes(base_dir):
     """
-    Scorre ricorsivamente la directory fornita e calcola gli hash dei file in base al contenuto testuale.
-    Genera un dizionario con le directory principali come chiavi e le liste di hash univoci come valori.
-
-    :param base_dir: Directory principale da analizzare.
-    :return: Dizionario {cartella_principale: [hash_unici]}
+    Scorre ricorsivamente la directory fornita e calcola gli hash dei file in base al contenuto testuale,
+    oppure – se non leggibile – chiede all'utente se procedere con hash binario.
     """
-    # Utilizzo di `defaultdict` per raccogliere gli hash
+    from collections import defaultdict
     hash_dict = defaultdict(set)
 
     for root, _, files in os.walk(base_dir):
-        # Determina la directory di livello superiore rispetto a base_dir
         relative_path = os.path.relpath(root, base_dir)
         root_folder = relative_path.split(os.sep)[0]
 
         for file in files:
             file_path = os.path.join(root, file)
+
+            # Prova con lettura testuale
             try:
-                # Leggi solo file testuali
-                with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     text = f.read()
-
-                # Calcola l'hash del contenuto testuale
                 file_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
-
-                # Aggiungi l'hash al set della directory di livello superiore
                 hash_dict[root_folder].add(file_hash)
-                print(f"Hash calcolato per: {file_path}")  # Log delle operazioni
+                print(f"[TESTO] Hash calcolato per: {file_path}")
 
             except UnicodeDecodeError:
-                # Ignora i file binari o non leggibili come testo
-                print(f"File ignorato (non testuale): {file_path}")
+                # Fallita lettura testuale → popup all'utente
+                risposta = messagebox.askyesno(
+                    "Contenuto non testuale",
+                    f"Impossibile leggere come testo il file:\n{file}\n\nProseguire con hashing su contenuto binario?"
+                )
+                if risposta:
+                    try:
+                        with open(file_path, "rb") as f:
+                            content = f.read()
+                        file_hash = hashlib.sha256(content).hexdigest()
+                        hash_dict[root_folder].add(file_hash)
+                        print(f"[BINARIO] Hash calcolato per: {file_path}")
+                    except Exception as e:
+                        print(f"Errore durante l'hash binario per {file_path}: {e}")
+                else:
+                    print(f"File ignorato (utente ha rifiutato hashing binario): {file_path}")
+
             except Exception as e:
-                # Gestisce altri tipi di errori
                 print(f"Errore durante il calcolo dell'hash per {file_path}: {e}")
 
-    # Converte i set in liste per il risultato finale
     return {folder: list(hashes) for folder, hashes in hash_dict.items()}
 
 
@@ -348,14 +355,23 @@ def visualize_similarity(input_file, visualization_type):
             plt.show()
 
         elif visualization_type == "Heatmap":
-            # Heatmap
-            plt.figure(figsize=(10, 8))
-            sns.heatmap(similarity_matrix, annot=False, cmap="Blues", cbar=True)
-            plt.title("Heatmap della Matrice di Similarità")
-            plt.xlabel("Floppy")
-            plt.ylabel("Floppy")
-            plt.xticks(rotation=45, ha="right")
+            plt.figure(figsize=(8, 8))
+            sns.heatmap(
+                similarity_matrix,
+                annot=True,            #  Mostra i numeri nelle celle
+                fmt=".3f",             #  Precisione decimale
+                cmap="Greens",         #  Colore heatmap, modificavile
+                cbar=True,
+                linewidths=0.5,        #  Bordi tra le celle
+                linecolor="white",
+                square=True            #  Celle quadrate
+            )
+            plt.title("Heatmap della Matrice di Similarità", fontsize=14, pad=12)
+            plt.xticks(rotation=45, ha="right", fontsize=9)
+            plt.yticks(rotation=0, fontsize=9)
+            plt.tight_layout()
             plt.show()
+
 
         elif visualization_type == "PCA":
             # PCA
@@ -415,8 +431,8 @@ def execute_phase():
 
         elif phase == "hash":
             hash_dict = calculate_hashes(os.path.join(output_path, "1-extract"))
-            # Salva il dizionario degli hash in CSV
             hash_csv_path = os.path.join(output_path, "2-hash", "hashes.csv")
+            os.makedirs(os.path.dirname(hash_csv_path), exist_ok=True)
             pd.DataFrame(
                 [(folder, h) for folder, hashes in hash_dict.items() for h in hashes],
                 columns=["Folder", "Hash"]
@@ -427,10 +443,10 @@ def execute_phase():
             binary_file = os.path.join(output_path, "3-binary", "binary_matrix.csv")
             os.makedirs(os.path.dirname(binary_file), exist_ok=True)
 
-            # Carica il CSV degli hash e crea la matrice binaria
+            # hash_csv_path deve essere un path, NON un DataFrame (errore precedente fixed)
             hash_csv_path = os.path.join(output_path, "2-hash", "hashes.csv")
-            hash_df = pd.read_csv(hash_csv_path)
-            binary_matrix = create_binary_matrix(hash_df)
+            binary_matrix = create_binary_matrix(hash_csv_path)
+
             binary_matrix.to_csv(binary_file)
             messagebox.showinfo("Fase 3", f"Matrice binaria salvata in: {binary_file}")
 
