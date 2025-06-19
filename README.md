@@ -1,9 +1,17 @@
 # README
-**Prerequisiti**
 
+**Scaricare il programma** 
 Questo programma è scritto interamente in Python. Per il suo corretto funzionamento è dunque necessario avere scaricato e installato [Python](https://www.python.org/downloads/)
 
-Per creare un ambiente Python che supporti l'esecuzione di questo script è inoltre necessario avere delle specifiche librerie installate. Per farlo sarà sufficiente portarsi nel terminale dalla cartella in cui sono stati scaricati i requirements e digitare:
+Per installare il programma è necessario scaricare i materiali da questo repository. Potete farlo andando su: 
+1. Code (in alto a destra)
+2. Download Zip.
+![image](https://github.com/user-attachments/assets/53725a24-3916-4c0b-a7fa-0e8cc6b84159)
+
+Estraete normalmente il contenuto dello zip. 
+
+**Prerequisiti**
+Per creare un ambiente Python che supporti l'esecuzione di questo script è inoltre necessario avere delle specifiche librerie installate. Per farlo sarà sufficiente entrare nella cartella in cui sono stati scaricati i requirements, da lì aprire il terminale (tasto destro del mouse ⮕ apri nel terminale) e digitare:
 
 						pip install -r requirements.txt
       
