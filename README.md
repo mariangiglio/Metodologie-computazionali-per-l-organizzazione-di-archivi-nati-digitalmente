@@ -31,6 +31,7 @@ Le prime fasi dello script (soprattutto la fase di estrazione dei materiali test
  - **pandas:** Una delle più popolari librerie di Python per la manipolazione e l'analisi di dati. Offre strutture di dati potenti e flessibili che rendono facile manipolare dati strutturati.
  - **numpy:** Libreria centrale per il calcolo scientifico in Python.Fornisce un oggetto array multidimensionale e una collezione di routine per operazioni rapide su array.
  - **tkinter** (e i relativi moduli filedialog, messagebox, ttk): È una libreria standard di Python per la creazione di interfacce grafiche. È utile per costruire applicazioni che necessitano di un'interfaccia grafica semplice ed efficace.
+ - **ttkthemes**: Libreria che offre temi per l'interfaccia Tkinter
  - **matplotlib.pyplot:** Una libreria di visualizzazione molto usata in Python, utilizzata per creare figure e grafici in vari formati e ambienti interattivi come Jupyter notebooks.
  - **seaborn:** Basata su matplotlib, questa libreria fornisce una interfaccia di alto livello per la creazione di grafici statistici.
  - **scipy.cluster.hierarchy (specificamente le funzioni linkage, dendrogram):** Queste funzioni sono usate per eseguire clustering gerarchico. linkage è usata per definire la metrica di distanza usata per il clustering, mentre dendrogram è utilizzata per visualizzare il risultato come un diagramma ad albero.
