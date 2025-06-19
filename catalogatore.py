@@ -6,14 +6,14 @@ import tempfile
 import pandas as pd
 import numpy as np
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, ttk, StringVar
+from ttkthemes import ThemedTk
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.cluster.hierarchy import linkage, dendrogram
 from sklearn.decomposition import PCA
 from sklearn.manifold import MDS
 from sklearn.cluster import KMeans
-from collections import defaultdict
 
 # ================================
 # Funzioni principali
@@ -322,7 +322,7 @@ def calculate_similarity(binary_matrix):
 # Fase 5: Visualizzazione
 # ================================
 
-def visualize_similarity(input_file, visualization_type):
+def visualize_similarity(input_file, visualization_type, show_numbers=True, number_fontsize=8, number_format=".2f"):
     """Fase di visualizzazione della matrice di similarità."""
     try:
         # Carica la matrice di similarità
@@ -355,16 +355,18 @@ def visualize_similarity(input_file, visualization_type):
             plt.show()
 
         elif visualization_type == "Heatmap":
-            plt.figure(figsize=(8, 8))
+            n = similarity_matrix.shape[0]
+            plt.figure(figsize=(0.4 * n, 0.4 * n))  # si adatta dinamicamente
             sns.heatmap(
                 similarity_matrix,
-                annot=True,            #  Mostra i numeri nelle celle
-                fmt=".3f",             #  Precisione decimale
-                cmap="Greens",         #  Colore heatmap, modificavile
+                annot=show_numbers,            # ✅ controllato dalla checkbox
+                fmt=number_format,                 # Precisione decimale
+                cmap="Greens",                 # Palette colore
                 cbar=True,
-                linewidths=0.5,        #  Bordi tra le celle
+                linewidths=0.5,
                 linecolor="white",
-                square=True            #  Celle quadrate
+                square=True,
+                annot_kws={"size": number_fontsize}  # ✅ controllato dallo slider
             )
             plt.title("Heatmap della Matrice di Similarità", fontsize=14, pad=12)
             plt.xticks(rotation=45, ha="right", fontsize=9)
@@ -463,19 +465,59 @@ def execute_phase():
 
         elif phase == "visualize":
             similarity_matrix_file = os.path.join(output_path, "4-similarity", "similarity_matrix.csv")
-            visualize_similarity(similarity_matrix_file, visualization_var.get())
+
+            try:
+                # Prendi i valori dalla GUI
+                show_numbers = show_numbers_var.get()
+                fontsize = heatmap_fontsize_var.get()
+                decimal_format = decimal_format_var.get()
+
+                # Passali alla funzione
+                visualize_similarity(similarity_matrix_file, visualization_var.get(), show_numbers, fontsize, decimal_format)
+
+            except FileNotFoundError as e:
+                messagebox.showerror("Errore", f"File o directory non trovata: {e}")
+            except Exception as e:
+                messagebox.showerror("Errore Generale", f"Si è verificato un errore: {e}")
 
     except FileNotFoundError as e:
         messagebox.showerror("Errore", f"File o directory non trovata: {e}")
     except Exception as e:
         messagebox.showerror("Errore Generale", f"Si è verificato un errore: {e}")
 
+
 # ================================
 # Interfaccia Tkinter combinata
 # ================================
 
-root = tk.Tk()
+root = ThemedTk(theme="radiance")
 root.title("Catalogatore")
+decimal_format_var = tk.StringVar(value=".2f")
+
+THEME_LABELS = {
+    "adapta": "Adapta (Material Design)", "alt": "Alt", "aquativo": "Aquativo",
+    "arc": "Arc (Moderno Blu)", "black": "Black (Scuro)", "blue": "Blue (Chiaro)",
+    "breeze": "Breeze (Soft)", "clam": "Clam", "classic": "Classic",
+    "clearlooks": "Clearlooks (Morbido)", "default": "Default", "elegance": "Elegance (Sobrio)",
+    "equilux": "Equilux (Neutro)", "itft1": "ITFT1", "keramik": "Keramik", "kroc": "Kroc (Vintage)",
+    "plastik": "Plastik (Pulito)", "radiance": "Radiance (Ubuntu‑like)", "scidblue": "Scid-Blue",
+    "scidgreen": "Scid-Green", "scidgrey": "Scid-Grey", "scidmint": "Scid-Mint",
+    "scidpink": "Scid-Pink", "scidpurple": "Scid-Purple", "scidsand": "Scid-Sand",
+    "smog": "Smog (Terroso)", "vista": "Vista", "winxpblue": "WinXP‑Blue",
+    "winnative": "WinNative", "xpnative": "XPnative", "yaru": "Yaru (Ubuntu moderno)"
+}
+
+# Crea barra menu
+menubar = tk.Menu(root)
+theme_menu = tk.Menu(menubar, tearoff=0)
+
+for t in root.get_themes():
+    label = THEME_LABELS.get(t, t.capitalize())
+    theme_menu.add_command(label=label, command=lambda theme=t: root.set_theme(theme))
+
+menubar.add_cascade(label="🖌️ Tema", menu=theme_menu)
+root.config(menu=menubar)
+
 
 def browse_input():
     phase = phase_var.get()
@@ -587,6 +629,8 @@ def update_exclusions():
 # Variabili di stato
 phase_var = tk.StringVar(value="prepare")
 visualization_var = tk.StringVar(value="Dendrogram")
+show_numbers_var = tk.BooleanVar(value=True)
+heatmap_fontsize_var = tk.IntVar(value=8)
 
 # Warning Frame
 warning_frame = ttk.Frame(root, padding="10")
@@ -629,6 +673,48 @@ visualization_frame.grid_remove()  # Inizialmente nascosto
 ttk.Label(visualization_frame, text="Seleziona tipo di visualizzazione:").grid(row=0, column=0, sticky="w", pady=5)
 visualization_menu = ttk.OptionMenu(visualization_frame, visualization_var, "Dendrogram", "Dendrogram", "Heatmap", "PCA", "K-means")
 visualization_menu.grid(row=0, column=1, sticky="w", pady=5)
+
+ttk.Label(visualization_frame, text="Formato decimale:").grid(row=3, column=0, sticky="w")
+decimal_menu = ttk.OptionMenu(
+    visualization_frame,
+    decimal_format_var,
+    ".2f",
+    ".0f", ".1f", ".2f", ".3f", ".4f"
+)
+decimal_menu.grid(row=3, column=1, sticky="w")
+
+
+# Opzione: Mostra numeri
+ttk.Checkbutton(
+    visualization_frame,
+    text="Mostra numeri sulla heatmap",
+    variable=show_numbers_var
+).grid(row=1, column=0, columnspan=2, sticky="w")
+
+# Slider font numeri
+# Etichetta dinamica accanto allo slider
+fontsize_label_var = StringVar()
+fontsize_label_var.set(str(heatmap_fontsize_var.get()))
+
+def update_fontsize_label(value):
+    fontsize_label_var.set(str(int(float(value))))
+
+# Etichetta statica
+ttk.Label(visualization_frame, text="Dimensione numeri:").grid(row=2, column=0, sticky="w")
+
+# Slider numerico
+fontsize_slider = ttk.Scale(
+    visualization_frame,
+    from_=1,
+    to=14,
+    variable=heatmap_fontsize_var,
+    orient="horizontal",
+    command=update_fontsize_label
+)
+fontsize_slider.grid(row=2, column=1, sticky="we")
+
+# Etichetta numerica che mostra il valore corrente
+ttk.Label(visualization_frame, textvariable=fontsize_label_var).grid(row=2, column=2, padx=5)
 
 # Execute Button
 ttk.Button(frame, text="Esegui", command=execute_phase).grid(row=6, column=0, columnspan=3, pady=10)
