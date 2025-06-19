@@ -11,6 +11,7 @@ Per installare il programma è necessario scaricare i materiali da questo reposi
 Estraete normalmente il contenuto dello zip. 
 
 **Prerequisiti**
+
 Per creare un ambiente Python che supporti l'esecuzione di questo script è inoltre necessario avere delle specifiche librerie installate. Per farlo sarà sufficiente entrare nella cartella in cui sono stati scaricati i requirements, da lì aprire il terminale (tasto destro del mouse ⮕ apri nel terminale) e digitare:
 
 						pip install -r requirements.txt
